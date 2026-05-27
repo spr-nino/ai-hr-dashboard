@@ -62,19 +62,19 @@ function onTextInput(e) {
     </div>
 
     <!-- Actions -->
-    <div class="flex gap-2.5 mt-4">
-      <button v-if="!hasResume" @click="useDemoResume" class="px-4 py-3 text-sm font-semibold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors flex-1">
-        使用示例简历
-      </button>
-      <button @click="$emit('analyze')" :disabled="isAnalyzing" class="flex-1 px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-        <svg v-if="!isAnalyzing" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex flex-col gap-3 mt-4">
+      <button @click="$emit('analyze')" :disabled="isAnalyzing" class="w-full py-4 text-base font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl hover:shadow-xl hover:shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 tracking-wide">
+        <svg v-if="!isAnalyzing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-        <svg v-else class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+        <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
-        {{ isAnalyzing ? '分析中...' : '开始 AI 分析' }}
+        {{ isAnalyzing ? 'AI 分析中...' : '开始 AI 分析' }}
+      </button>
+      <button v-if="!hasResume" @click="useDemoResume" class="w-full py-2.5 text-sm font-semibold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+        使用示例简历
       </button>
     </div>
   </div>

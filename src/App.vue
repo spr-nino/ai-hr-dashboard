@@ -8,20 +8,17 @@ import StatsCards from './components/StatsCards.vue'
 import MatchChart from './components/MatchChart.vue'
 import ScreeningChart from './components/ScreeningChart.vue'
 import CandidatesTable from './components/CandidatesTable.vue'
-import { analyzeMatch, generateCandidateResults } from './services/matcher.js'
+import { analyzeMatch } from './services/matcher.js'
 
-const demoResume = `【个人信息】
-姓名：张伟 | 年龄：29岁 | 学历：本科 - 计算机科学与技术
+const demoResume = `姓名：张伟 | 年龄：29岁 | 学历：本科 - 计算机科学与技术
 
 【工作经历】
 2020-至今 ABC科技有限公司 | 高级产品经理
 - 主导公司核心 SaaS 平台产品重构，DAU 提升 40%
 - 搭建数据看板，覆盖 50+ 业务指标
-- 推动跨部门协作，项目交付周期缩短 30%
 
 2018-2020 XYZ 网络科技 | 产品经理
 - 负责电商平台产品设计及管理后台迭代
-- 使用数据分析驱动产品决策
 
 【技能】
 产品规划, 用户研究, 数据分析, Axure, SQL, Python, 跨团队协作, 项目管理`
@@ -62,34 +59,30 @@ const hasResult = ref(false)
 
 const analysisResult = reactive({
   overallScore: 0, dimensions: [], riskPoints: [], interviewQuestions: [],
-  hrSuggestions: null, stats: { uploaded: 0, screened: 0, matched: 0, rejected: 0, pending: 0 },
-  candidates: [], distribution: [], screening: [],
+  hrSuggestions: null,
+  stats: { uploaded: 0, screened: 0, matched: 0, rejected: 0, pending: 0 },
+  candidate: null,
+  distribution: [], screening: [],
 })
 
-// ---- Bookmarked candidates ----
+// ---- Bookmarked ----
 const bookmarked = reactive(new Set())
-
 function toggleBookmark(name) {
-  if (bookmarked.has(name)) {
-    bookmarked.delete(name)
-  } else {
-    bookmarked.add(name)
-  }
+  if (bookmarked.has(name)) bookmarked.delete(name)
+  else bookmarked.add(name)
 }
+const bookmarkedCandidates = computed(() => {
+  if (!analysisResult.candidate) return []
+  return bookmarked.has(analysisResult.candidate.name) ? [analysisResult.candidate] : []
+})
+function removeBookmark(name) { bookmarked.delete(name) }
 
-const bookmarkedCandidates = computed(() =>
-  analysisResult.candidates.filter(c => bookmarked.has(c.name))
-)
-
-function removeBookmark(name) {
-  bookmarked.delete(name)
-}
-
+// ---- Run Analysis ----
 async function runAnalysis() {
   const jd = rawJdText.value
   const resume = resumeText.value
-  if (!jd.trim()) { alert('请填写岗位信息'); return }
-  if (!resume.trim()) { alert('请粘贴简历文本'); return }
+  if (!jd.trim()) { alert('请先填写岗位信息'); return }
+  if (!resume.trim()) { alert('请先粘贴简历文本'); return }
 
   isAnalyzing.value = true; hasResult.value = false; analysisProgress.value = 0; currentStep.value = 0
   bookmarked.clear()
@@ -108,17 +101,56 @@ async function runAnalysis() {
   clearInterval(timer)
   analysisProgress.value = 100; currentStep.value = 4
 
-  const baseResult = analyzeMatch(jd, resume)
-  const fullResult = generateCandidateResults(jd, resume)
-  analysisResult.overallScore = baseResult.overallScore
-  analysisResult.dimensions = baseResult.dimensions
-  analysisResult.riskPoints = baseResult.riskPoints
-  analysisResult.interviewQuestions = baseResult.interviewQuestions
-  analysisResult.hrSuggestions = baseResult.hrSuggestions
-  analysisResult.stats = fullResult.stats
-  analysisResult.candidates = fullResult.candidates
-  analysisResult.distribution = fullResult.distribution
-  analysisResult.screening = fullResult.screening
+  // Real matching
+  const result = analyzeMatch(jd, resume)
+
+  analysisResult.overallScore = result.overallScore
+  analysisResult.dimensions = result.dimensions
+  analysisResult.riskPoints = result.riskPoints
+  analysisResult.interviewQuestions = result.interviewQuestions
+  analysisResult.hrSuggestions = result.hrSuggestions
+
+  // Build single real candidate
+  const candidateName = result.candidateName || '候选人'
+  const isMatched = result.overallScore >= 65
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 16)
+
+  analysisResult.candidate = {
+    name: candidateName,
+    resume: resumeFileName || '简历',
+    match: result.overallScore,
+    result: isMatched ? '符合' : (result.overallScore >= 50 ? '待复核' : '不符合'),
+    resultColor: isMatched ? 'bg-emerald-50 text-emerald-600' : (result.overallScore >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'),
+    keyStrength: result.matchedSkills.length > 0 ? result.matchedSkills.slice(0, 4).join('、') : '简历已解析',
+    time: now,
+  }
+
+  // Stats from real data
+  analysisResult.stats = {
+    uploaded: 1,
+    screened: 1,
+    matched: isMatched ? 1 : 0,
+    rejected: result.overallScore < 50 ? 1 : 0,
+    pending: (result.overallScore >= 50 && result.overallScore < 65) ? 1 : 0,
+  }
+
+  // Distribution for pie chart
+  const s = result.overallScore
+  analysisResult.distribution = [
+    { value: s >= 80 ? 1 : 0, name: '80%以上', color: '#22c55e' },
+    { value: (s >= 60 && s < 80) ? 1 : 0, name: '60%-80%', color: '#3b82f6' },
+    { value: (s >= 40 && s < 60) ? 1 : 0, name: '40%-60%', color: '#f59e0b' },
+    { value: (s >= 20 && s < 40) ? 1 : 0, name: '20%-40%', color: '#f97316' },
+    { value: s < 20 ? 1 : 0, name: '20%以下', color: '#ef4444' },
+  ]
+
+  // Screening for bar chart
+  analysisResult.screening = [
+    { name: '符合岗位', value: isMatched ? 1 : 0, colors: ['#22c55e', '#16a34a'] },
+    { name: '不符合', value: result.overallScore < 50 ? 1 : 0, colors: ['#ef4444', '#dc2626'] },
+    { name: '待复核', value: (result.overallScore >= 50 && result.overallScore < 65) ? 1 : 0, colors: ['#f59e0b', '#d97706'] },
+    { name: '已淘汰', value: 0, colors: ['#94a3b8', '#64748b'] },
+  ]
 
   await new Promise(r => setTimeout(r, 200))
   isAnalyzing.value = false; hasResult.value = true
@@ -126,9 +158,9 @@ async function runAnalysis() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f4f6f9]">
+  <div class="min-h-screen bg-[#f4f6f9] flex flex-col">
     <Header />
-    <main class="max-w-[1440px] mx-auto p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-5">
+    <main class="flex-1 w-full px-3 sm:px-5 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5">
       <!-- Job Info -->
       <JobInfoCard
         :title="jobInfo.title"
@@ -175,7 +207,7 @@ async function runAnalysis() {
         <ScreeningChart :screening="analysisResult.screening" :has-result="hasResult" />
       </div>
 
-      <!-- Bookmarked candidates panel -->
+      <!-- Bookmarked candidates -->
       <div v-if="bookmarkedCandidates.length > 0" class="card p-4 sm:p-5">
         <div class="flex items-center gap-2 mb-3">
           <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
@@ -191,7 +223,7 @@ async function runAnalysis() {
               <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-xs font-bold text-amber-700">{{ c.name[0] }}</div>
               <div>
                 <p class="text-sm font-semibold text-slate-700">{{ c.name }}</p>
-                <p class="text-xs text-slate-500">{{ c.match }}% · {{ c.keyStrength }}</p>
+                <p class="text-xs text-slate-500">{{ c.match }}% · {{ c.result }}</p>
               </div>
             </div>
             <button @click="removeBookmark(c.name)" class="text-amber-500 hover:text-red-500 transition-colors text-lg leading-none">&times;</button>
@@ -201,7 +233,7 @@ async function runAnalysis() {
 
       <!-- Candidates Table -->
       <CandidatesTable
-        :candidates="analysisResult.candidates"
+        :candidate="analysisResult.candidate"
         :has-result="hasResult"
         :bookmarked="bookmarked"
         @toggle-bookmark="toggleBookmark"
@@ -220,12 +252,5 @@ async function runAnalysis() {
 }
 .card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-/* Responsive table scroll */
-@media (max-width: 768px) {
-  .overflow-x-auto {
-    -webkit-overflow-scrolling: touch;
-  }
 }
 </style>
