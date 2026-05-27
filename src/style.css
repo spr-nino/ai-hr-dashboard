@@ -10,68 +10,44 @@
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  background: #080c14;
-  color: #e2e8f0;
+  background: #f5f7fa;
+  color: #1e293b;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
-
-.glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(51, 65, 85, 0.45);
-  border-radius: 16px;
-}
-
-.glass-input {
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.4);
-  border-radius: 10px;
-  color: #e2e8f0;
-  transition: all 0.25s ease;
-}
-.glass-input:focus {
-  outline: none;
-  border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 0 20px rgba(59, 130, 246, 0.1);
-}
-.glass-input::placeholder { color: #475569; }
-
-.btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: #fff;
-  font-weight: 600;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.btn-primary:hover {
-  box-shadow: 0 0 24px rgba(59, 130, 246, 0.35);
-  transform: translateY(-1px);
-}
-.btn-primary:active { transform: translateY(0); }
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 12px rgba(59, 130, 246, 0.2); }
-  50% { box-shadow: 0 0 28px rgba(59, 130, 246, 0.4); }
+  0%, 100% { box-shadow: 0 0 12px rgba(37, 99, 255, 0.3); }
+  50% { box-shadow: 0 0 28px rgba(37, 99, 255, 0.6); }
+}
+
+@keyframes rotate-glow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flow-light {
+  0% { left: -100%; }
+  100% { left: 200%; }
 }
 
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-8px) scale(1.3); opacity: 1; }
+}
+
 .animate-slide-up { animation: slide-up 0.4s ease forwards; }
+.animate-rotate-glow { animation: rotate-glow 3s linear infinite; }
