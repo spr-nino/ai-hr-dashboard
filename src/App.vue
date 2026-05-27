@@ -10,7 +10,6 @@ import ScreeningChart from './components/ScreeningChart.vue'
 import CandidatesTable from './components/CandidatesTable.vue'
 import { analyzeMatch, generateCandidateResults } from './services/matcher.js'
 
-// ---- Demo resume ----
 const demoResume = `【个人信息】
 姓名：张伟 | 年龄：29岁 | 学历：本科 - 计算机科学与技术
 
@@ -28,13 +27,7 @@ const demoResume = `【个人信息】
 产品规划, 用户研究, 数据分析, Axure, SQL, Python, 跨团队协作, 项目管理`
 
 // ---- Job Description State ----
-const jobInfo = reactive({
-  title: '',
-  location: '',
-  type: '全职',
-  skills: [],
-  description: '',
-})
+const jobInfo = reactive({ title: '', location: '', type: '全职', skills: [], description: '' })
 
 function buildJdText(info) {
   return [
@@ -45,7 +38,6 @@ function buildJdText(info) {
     `【工作性质】${info.type}`,
   ].join('\n')
 }
-
 const rawJdText = ref(buildJdText(jobInfo))
 
 function onJobInfoChange(info) {
@@ -56,7 +48,6 @@ function onJobInfoChange(info) {
 // ---- Resume State ----
 const resumeText = ref('')
 const resumeFileName = ref('')
-
 function onResumeInput(text, fileName) {
   resumeText.value = text
   resumeFileName.value = fileName || 'manual-input.txt'
@@ -70,34 +61,19 @@ const steps = ['文件解析', '信息抽取', '技能匹配', '综合评估', '
 const hasResult = ref(false)
 
 const analysisResult = reactive({
-  overallScore: 0,
-  dimensions: [],
-  riskPoints: [],
-  interviewQuestions: [],
-  hrSuggestions: null,
-  stats: { uploaded: 0, screened: 0, matched: 0, rejected: 0, pending: 0 },
-  candidates: [],
-  distribution: [],
-  screening: [],
+  overallScore: 0, dimensions: [], riskPoints: [], interviewQuestions: [],
+  hrSuggestions: null, stats: { uploaded: 0, screened: 0, matched: 0, rejected: 0, pending: 0 },
+  candidates: [], distribution: [], screening: [],
 })
 
-// ---- Actions ----
 async function runAnalysis() {
   const jd = rawJdText.value
   const resume = resumeText.value
-
   if (!jd.trim()) { alert('请填写岗位信息'); return }
   if (!resume.trim()) { alert('请粘贴简历文本'); return }
 
-  isAnalyzing.value = true
-  hasResult.value = false
-  analysisProgress.value = 0
-  currentStep.value = 0
-
-  const duration = 1500
-  const totalSteps = duration / 30
-  let ticks = 0
-
+  isAnalyzing.value = true; hasResult.value = false; analysisProgress.value = 0; currentStep.value = 0
+  const duration = 1500; const totalSteps = duration / 30; let ticks = 0
   const timer = setInterval(() => {
     ticks++
     analysisProgress.value = Math.min(98, Math.round((ticks / totalSteps) * 100))
@@ -109,13 +85,10 @@ async function runAnalysis() {
 
   await new Promise(r => setTimeout(r, duration))
   clearInterval(timer)
-  analysisProgress.value = 100
-  currentStep.value = 4
+  analysisProgress.value = 100; currentStep.value = 4
 
-  // Real matching with our engine
   const baseResult = analyzeMatch(jd, resume)
   const fullResult = generateCandidateResults(jd, resume)
-
   analysisResult.overallScore = baseResult.overallScore
   analysisResult.dimensions = baseResult.dimensions
   analysisResult.riskPoints = baseResult.riskPoints
@@ -127,79 +100,75 @@ async function runAnalysis() {
   analysisResult.screening = fullResult.screening
 
   await new Promise(r => setTimeout(r, 200))
-  isAnalyzing.value = false
-  hasResult.value = true
+  isAnalyzing.value = false; hasResult.value = true
 }
-
-	</script>
+</script>
 
 <template>
-  <div class="min-h-screen bg-[#f5f7fa]">
-      <Header />
-      <main class="p-5 space-y-5">
-        <!-- Row 1 -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div class="lg:col-span-3">
-            <UploadCard
-              :resume-text="resumeText"
-              :resume-file-name="resumeFileName"
-              :demo-resume="demoResume"
-              :is-analyzing="isAnalyzing"
-              @update:resume="onResumeInput"
-              @analyze="runAnalysis"
-            />
-          </div>
-          <div class="lg:col-span-5">
-            <AnalysisCard
-              :progress="analysisProgress"
-              :current-step="currentStep"
-              :steps="steps"
-              :is-analyzing="isAnalyzing"
-              :has-result="hasResult"
-              :overall-score="analysisResult.overallScore"
-              :recommendation="analysisResult.hrSuggestions?.recommendation"
-              :dimensions="analysisResult.dimensions"
-              :risk-points="analysisResult.riskPoints"
-              :interview-questions="analysisResult.interviewQuestions"
-              :hr-suggestions="analysisResult.hrSuggestions"
-            />
-          </div>
-          <div class="lg:col-span-4">
-            <JobInfoCard
-              :title="jobInfo.title"
-              :location="jobInfo.location"
-              :type="jobInfo.type"
-              :skills="jobInfo.skills"
-              :description="jobInfo.description"
-              @update="onJobInfoChange"
-            />
-          </div>
+  <div class="min-h-screen bg-[#f4f6f9]">
+    <Header />
+    <main class="max-w-[1440px] mx-auto p-5 space-y-4">
+      <!-- Job Info Bar -->
+      <JobInfoCard
+        :title="jobInfo.title"
+        :location="jobInfo.location"
+        :type="jobInfo.type"
+        :skills="jobInfo.skills"
+        :description="jobInfo.description"
+        @update="onJobInfoChange"
+      />
+
+      <!-- Main: Upload + Analysis -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <UploadCard
+          :resume-text="resumeText"
+          :resume-file-name="resumeFileName"
+          :demo-resume="demoResume"
+          :is-analyzing="isAnalyzing"
+          @update:resume="onResumeInput"
+          @analyze="runAnalysis"
+        />
+        <div class="lg:col-span-2">
+          <AnalysisCard
+            :progress="analysisProgress"
+            :current-step="currentStep"
+            :steps="steps"
+            :is-analyzing="isAnalyzing"
+            :has-result="hasResult"
+            :overall-score="analysisResult.overallScore"
+            :recommendation="analysisResult.hrSuggestions?.recommendation"
+            :dimensions="analysisResult.dimensions"
+            :risk-points="analysisResult.riskPoints"
+            :interview-questions="analysisResult.interviewQuestions"
+            :hr-suggestions="analysisResult.hrSuggestions"
+          />
         </div>
+      </div>
 
-        <!-- Row 2: Stats -->
-        <StatsCards :stats="analysisResult.stats" :has-result="hasResult" />
+      <!-- Stats -->
+      <StatsCards :stats="analysisResult.stats" :has-result="hasResult" />
 
-        <!-- Row 3: Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <MatchChart :distribution="analysisResult.distribution" :has-result="hasResult" :screened-count="analysisResult.stats.screened" />
-          <ScreeningChart :screening="analysisResult.screening" :has-result="hasResult" />
-        </div>
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <MatchChart :distribution="analysisResult.distribution" :has-result="hasResult" :screened-count="analysisResult.stats.screened" />
+        <ScreeningChart :screening="analysisResult.screening" :has-result="hasResult" />
+      </div>
 
-        <!-- Row 4: Table -->
-        <CandidatesTable :candidates="analysisResult.candidates" :has-result="hasResult" />
-      </main>
+      <!-- Candidates Table -->
+      <CandidatesTable :candidates="analysisResult.candidates" :has-result="hasResult" />
+    </main>
   </div>
 </template>
 
 <style>
 .card {
   background: #fff;
-  border: 1px solid #f1f5f9;
-  border-radius: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border: 1px solid #e8ecf1;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: box-shadow 0.2s ease;
 }
 .card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 </style>

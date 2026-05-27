@@ -8,10 +8,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
-const props = defineProps({
-  screening: Array,
-  hasResult: Boolean,
-})
+const props = defineProps({ screening: Array, hasResult: Boolean })
 
 const defaultData = [
   { name: '符合岗位', value: 28, colors: ['#22c55e', '#16a34a'] },
@@ -20,23 +17,20 @@ const defaultData = [
   { name: '已淘汰', value: 8, colors: ['#94a3b8', '#64748b'] },
 ]
 
-const data = computed(() => {
-  if (props.hasResult && props.screening?.length) return props.screening
-  return defaultData
-})
+const data = computed(() => (props.hasResult && props.screening?.length) ? props.screening : defaultData)
 
 const option = computed(() => ({
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+    backgroundColor: '#fff', borderColor: '#e8ecf1', borderWidth: 1,
     textStyle: { color: '#334155', fontSize: 13 },
     boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
   },
-  grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+  grid: { left: 0, right: 24, top: 8, bottom: 0, containLabel: true },
   xAxis: {
     type: 'category',
     data: data.value.map(d => d.name),
-    axisLine: { lineStyle: { color: '#e2e8f0' } },
+    axisLine: { lineStyle: { color: '#e8ecf1' } },
     axisTick: { show: false },
     axisLabel: { color: '#64748b', fontSize: 12 },
   },
@@ -46,7 +40,7 @@ const option = computed(() => ({
     axisLabel: { color: '#94a3b8', fontSize: 11 },
   },
   series: [{
-    type: 'bar', barWidth: 28,
+    type: 'bar', barWidth: 32,
     itemStyle: { borderRadius: [8, 8, 0, 0] },
     data: data.value.map(d => ({
       value: d.value,
@@ -58,8 +52,15 @@ const option = computed(() => ({
 </script>
 
 <template>
-  <div class="card p-5">
-    <h3 class="text-[15px] font-semibold text-slate-800 mb-2">筛选状态分布</h3>
-    <v-chart :option="option" :autoresize="true" class="w-full" style="height:280px" />
+  <div class="card p-4">
+    <div class="flex items-center gap-2 mb-1">
+      <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      </div>
+      <h3 class="text-sm font-bold text-slate-700">筛选状态分布</h3>
+    </div>
+    <v-chart :option="option" :autoresize="true" class="w-full" style="height:260px" />
   </div>
 </template>
