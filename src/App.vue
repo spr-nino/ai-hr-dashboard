@@ -1,6 +1,5 @@
 <script setup>
 import { ref, reactive } from 'vue'
-import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
 import UploadCard from './components/UploadCard.vue'
 import AnalysisCard from './components/AnalysisCard.vue'
@@ -10,9 +9,6 @@ import MatchChart from './components/MatchChart.vue'
 import ScreeningChart from './components/ScreeningChart.vue'
 import CandidatesTable from './components/CandidatesTable.vue'
 import { analyzeMatch, generateCandidateResults } from './services/matcher.js'
-
-const sidebarOpen = ref(true)
-function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
 
 // ---- Demo resume ----
 const demoResume = `【个人信息】
@@ -33,11 +29,11 @@ const demoResume = `【个人信息】
 
 // ---- Job Description State ----
 const jobInfo = reactive({
-  title: '高级产品经理（社招）',
-  location: '上海 · 浦东新区',
+  title: '',
+  location: '',
   type: '全职',
-  skills: ['5年以上经验', '产品规划', '用户研究', '数据分析', '跨团队协作'],
-  description: '负责公司核心产品线的规划与迭代，通过数据驱动的方式持续优化产品体验，推动业务增长。',
+  skills: [],
+  description: '',
 })
 
 function buildJdText(info) {
@@ -58,8 +54,8 @@ function onJobInfoChange(info) {
 }
 
 // ---- Resume State ----
-const resumeText = ref(demoResume)
-const resumeFileName = ref('张伟-高级产品经理.txt')
+const resumeText = ref('')
+const resumeFileName = ref('')
 
 function onResumeInput(text, fileName) {
   resumeText.value = text
@@ -71,7 +67,7 @@ const isAnalyzing = ref(false)
 const analysisProgress = ref(0)
 const currentStep = ref(0)
 const steps = ['文件解析', '信息抽取', '技能匹配', '综合评估', '结果生成']
-const hasResult = ref(true)
+const hasResult = ref(false)
 
 const analysisResult = reactive({
   overallScore: 0,
@@ -135,18 +131,11 @@ async function runAnalysis() {
   hasResult.value = true
 }
 
-// Run initial analysis on mount
-import { onMounted } from 'vue'
-onMounted(() => {
-  runAnalysis()
-})
-</script>
+	</script>
 
 <template>
   <div class="min-h-screen bg-[#f5f7fa]">
-    <Sidebar v-if="sidebarOpen" />
-    <div :class="['transition-all duration-300', sidebarOpen ? 'ml-[240px]' : 'ml-0']">
-      <Header @toggle-sidebar="toggleSidebar" />
+      <Header />
       <main class="p-5 space-y-5">
         <!-- Row 1 -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -199,7 +188,6 @@ onMounted(() => {
         <!-- Row 4: Table -->
         <CandidatesTable :candidates="analysisResult.candidates" :has-result="hasResult" />
       </main>
-    </div>
   </div>
 </template>
 
