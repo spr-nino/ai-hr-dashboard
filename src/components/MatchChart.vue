@@ -8,6 +8,27 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
+const props = defineProps({
+  distribution: Array,
+  hasResult: Boolean,
+  screenedCount: Number,
+})
+
+const defaultData = [
+  { value: 28, name: '80%以上', color: '#22c55e' },
+  { value: 22, name: '60%-80%', color: '#3b82f6' },
+  { value: 18, name: '40%-60%', color: '#f59e0b' },
+  { value: 16, name: '20%-40%', color: '#f97316' },
+  { value: 12, name: '20%以下', color: '#ef4444' },
+]
+
+const data = computed(() => {
+  if (props.hasResult && props.distribution?.length) return props.distribution
+  return defaultData
+})
+
+const total = computed(() => data.value.reduce((s, d) => s + d.value, 0))
+
 const option = computed(() => ({
   tooltip: {
     trigger: 'item',
@@ -19,12 +40,8 @@ const option = computed(() => ({
     formatter: '{b}: {c}人 ({d}%)',
   },
   legend: {
-    orient: 'vertical',
-    right: 10,
-    top: 'center',
-    itemWidth: 8,
-    itemHeight: 8,
-    itemGap: 12,
+    orient: 'vertical', right: 10, top: 'center',
+    itemWidth: 8, itemHeight: 8, itemGap: 12,
     textStyle: { color: '#64748b', fontSize: 12 },
   },
   series: [{
@@ -32,31 +49,17 @@ const option = computed(() => ({
     radius: ['60%', '80%'],
     center: ['42%', '50%'],
     avoidLabelOverlap: false,
-    itemStyle: {
-      borderRadius: 6,
-      borderColor: '#fff',
-      borderWidth: 3,
-    },
+    itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 3 },
     label: {
-      show: true,
-      position: 'center',
-      formatter: '{total|96}\n{label|已筛选}',
+      show: true, position: 'center',
+      formatter: `{total|${total.value}}\n{label|已筛选}`,
       rich: {
         total: { fontSize: 28, fontWeight: 800, color: '#1e293b', lineHeight: 32 },
         label: { fontSize: 12, color: '#94a3b8', lineHeight: 20 },
       },
     },
-    emphasis: {
-      label: { show: true, fontSize: 16, fontWeight: 'bold' },
-      scaleSize: 8,
-    },
-    data: [
-      { value: 28, name: '80%以上', itemStyle: { color: '#22c55e' } },
-      { value: 22, name: '60%-80%', itemStyle: { color: '#3b82f6' } },
-      { value: 18, name: '40%-60%', itemStyle: { color: '#f59e0b' } },
-      { value: 16, name: '20%-40%', itemStyle: { color: '#f97316' } },
-      { value: 12, name: '20%以下', itemStyle: { color: '#ef4444' } },
-    ],
+    emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' }, scaleSize: 8 },
+    data: data.value.map(d => ({ value: d.value, name: d.name, itemStyle: { color: d.color } })),
   }],
 }))
 </script>

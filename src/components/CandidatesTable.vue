@@ -1,22 +1,21 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+
+const props = defineProps({
+  candidates: Array,
+  hasResult: Boolean,
+})
 
 const searchQuery = ref('')
 
-const candidates = [
-  { name: '张伟', resume: '张伟-高级前端开发.pdf', match: 92, result: '符合', resultColor: 'bg-emerald-50 text-emerald-600', keyStrength: 'Vue3/TypeScript/组件库搭建', time: '2026-05-27 14:30' },
-  { name: '李娜', resume: '李娜-产品经理.docx', match: 88, result: '符合', resultColor: 'bg-emerald-50 text-emerald-600', keyStrength: 'B端SaaS/数据分析/用户增长', time: '2026-05-27 13:15' },
-  { name: '王强', resume: '王强-后端开发.pdf', match: 76, result: '待复核', resultColor: 'bg-amber-50 text-amber-600', keyStrength: 'Java/微服务/高并发', time: '2026-05-27 12:40' },
-  { name: '赵敏', resume: '赵敏-数据分析师.pdf', match: 64, result: '不符合', resultColor: 'bg-red-50 text-red-600', keyStrength: 'SQL/Python/可视化', time: '2026-05-27 11:20' },
-  { name: '陈明', resume: '陈明-全栈开发.docx', match: 95, result: '符合', resultColor: 'bg-emerald-50 text-emerald-600', keyStrength: 'React/Node.js/DevOps', time: '2026-05-27 10:05' },
-  { name: '刘婷', resume: '刘婷-前端开发.pdf', match: 82, result: '符合', resultColor: 'bg-emerald-50 text-emerald-600', keyStrength: 'React Native/跨平台/CI/CD', time: '2026-05-27 09:45' },
-  { name: '周磊', resume: '周磊-运维工程师.pdf', match: 55, result: '不符合', resultColor: 'bg-red-50 text-red-600', keyStrength: 'Linux/K8s/Docker', time: '2026-05-27 09:10' },
-  { name: '吴芳', resume: '吴芳-UI设计师.pdf', match: 70, result: '待复核', resultColor: 'bg-amber-50 text-amber-600', keyStrength: 'Figma/设计系统/用户研究', time: '2026-05-26 17:30' },
-]
+const filtered = computed(() => {
+  if (!props.candidates) return []
+  if (!searchQuery.value) return props.candidates
+  const q = searchQuery.value.toLowerCase()
+  return props.candidates.filter(c => c.name.includes(q) || c.resume.includes(q) || c.keyStrength.includes(q))
+})
 
-const filteredCandidates = ref([...candidates])
-
-const getMatchColor = (score) => {
+function getMatchColor(score) {
   if (score >= 85) return 'bg-green-500'
   if (score >= 70) return 'bg-amber-400'
   return 'bg-red-400'
@@ -70,8 +69,18 @@ const getMatchColor = (score) => {
           </tr>
         </thead>
         <tbody>
+          <tr v-if="!hasResult && !filtered.length" class="border-b border-slate-50">
+            <td colspan="7" class="px-5 py-16 text-center">
+              <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-100 flex items-center justify-center">
+                <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <p class="text-sm text-slate-400">点击"开始 AI 分析"查看候选人匹配结果</p>
+            </td>
+          </tr>
           <tr
-            v-for="(c, i) in filteredCandidates"
+            v-for="(c, i) in filtered"
             :key="i"
             class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
           >
@@ -114,13 +123,12 @@ const getMatchColor = (score) => {
 
     <!-- Pagination -->
     <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
-      <span class="text-sm text-slate-500">共 <b class="text-slate-700">8</b> 条记录</span>
+      <span class="text-sm text-slate-500">共 <b class="text-slate-700">{{ filtered.length }}</b> 条记录</span>
       <div class="flex items-center gap-1.5">
         <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-500 text-white text-sm font-semibold">1</button>
-        <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 text-sm transition-colors">2</button>
         <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>

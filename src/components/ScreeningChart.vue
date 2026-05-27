@@ -8,19 +8,34 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
+const props = defineProps({
+  screening: Array,
+  hasResult: Boolean,
+})
+
+const defaultData = [
+  { name: '符合岗位', value: 28, colors: ['#22c55e', '#16a34a'] },
+  { name: '不符合', value: 57, colors: ['#ef4444', '#dc2626'] },
+  { name: '待复核', value: 11, colors: ['#f59e0b', '#d97706'] },
+  { name: '已淘汰', value: 8, colors: ['#94a3b8', '#64748b'] },
+]
+
+const data = computed(() => {
+  if (props.hasResult && props.screening?.length) return props.screening
+  return defaultData
+})
+
 const option = computed(() => ({
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#fff',
-    borderColor: '#e2e8f0',
-    borderWidth: 1,
+    backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
     textStyle: { color: '#334155', fontSize: 13 },
     boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
   },
   grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
   xAxis: {
     type: 'category',
-    data: ['符合岗位', '不符合', '待复核', '已淘汰'],
+    data: data.value.map(d => d.name),
     axisLine: { lineStyle: { color: '#e2e8f0' } },
     axisTick: { show: false },
     axisLabel: { color: '#64748b', fontSize: 12 },
@@ -31,22 +46,13 @@ const option = computed(() => ({
     axisLabel: { color: '#94a3b8', fontSize: 11 },
   },
   series: [{
-    type: 'bar',
-    barWidth: 28,
+    type: 'bar', barWidth: 28,
     itemStyle: { borderRadius: [8, 8, 0, 0] },
-    data: [
-      { value: 28, itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#22c55e' }, { offset: 1, color: '#16a34a' }] } } },
-      { value: 57, itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#ef4444' }, { offset: 1, color: '#dc2626' }] } } },
-      { value: 11, itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#f59e0b' }, { offset: 1, color: '#d97706' }] } } },
-      { value: 8, itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#94a3b8' }, { offset: 1, color: '#64748b' }] } } },
-    ],
-    label: {
-      show: true,
-      position: 'top',
-      color: '#64748b',
-      fontSize: 13,
-      fontWeight: 700,
-    },
+    data: data.value.map(d => ({
+      value: d.value,
+      itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: d.colors[0] }, { offset: 1, color: d.colors[1] }] } },
+    })),
+    label: { show: true, position: 'top', color: '#64748b', fontSize: 13, fontWeight: 700 },
   }],
 }))
 </script>
