@@ -9,152 +9,190 @@ import { CanvasRenderer } from 'echarts/renderers'
 use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const props = defineProps({
-  progress: Number, currentStep: Number, steps: Array, isAnalyzing: Boolean,
-  hasResult: Boolean, overallScore: Number, recommendation: String,
-  dimensions: Array, riskPoints: Array, interviewQuestions: Array, hrSuggestions: Object,
+  progress: Number,
+  currentStep: Number,
+  steps: Array,
+  isAnalyzing: Boolean,
+  hasResult: Boolean,
+  overallScore: Number,
+  recommendation: String,
+  dimensions: Array,
+  riskPoints: Array,
+  interviewQuestions: Array,
+  hrSuggestions: Object,
 })
+defineEmits(['copy-report'])
 
-const scoreColor = computed(() => {
-  const s = props.overallScore
-  if (s >= 80) return '#22c55e'
-  if (s >= 60) return '#f59e0b'
-  return '#ef4444'
+const scoreTone = computed(() => {
+  const score = props.overallScore
+  if (score >= 80) return { color: '#059669', label: '高匹配' }
+  if (score >= 65) return { color: '#2563eb', label: '可推进' }
+  if (score >= 50) return { color: '#d97706', label: '需复核' }
+  return { color: '#e11d48', label: '低匹配' }
 })
 
 const barOption = computed(() => ({
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#fff', borderColor: '#e8ecf1', borderWidth: 1,
-    textStyle: { color: '#334155', fontSize: 13 },
-    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-    formatter: (params) => `${params[0].name}<br/><span style="font-weight:700;font-size:16px">${params[0].value} 分</span>`,
+    backgroundColor: 'rgba(15, 23, 42, 0.92)',
+    borderWidth: 0,
+    textStyle: { color: '#fff', fontSize: 12 },
+    formatter: params => `${params[0].name}<br/><b>${params[0].value} 分</b>`,
   },
-  grid: { left: 8, right: 36, top: 4, bottom: 4, containLabel: true },
+  grid: { left: 8, right: 42, top: 8, bottom: 4, containLabel: true },
   xAxis: {
-    type: 'value', max: 100,
-    axisLine: { show: false }, axisTick: { show: false },
-    splitLine: { lineStyle: { color: '#f1f5f9' } },
+    type: 'value',
+    max: 100,
+    axisLine: { show: false },
+    axisTick: { show: false },
+    splitLine: { lineStyle: { color: '#eef2f7' } },
     axisLabel: { color: '#94a3b8', fontSize: 10 },
   },
   yAxis: {
     type: 'category',
     data: (props.dimensions || []).map(d => d.name),
-    axisLine: { show: false }, axisTick: { show: false },
-    axisLabel: { color: '#64748b', fontSize: 12 },
     inverse: true,
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: { color: '#475569', fontSize: 12, fontWeight: 600 },
   },
   series: [{
-    type: 'bar', barWidth: 14,
-    data: (props.dimensions || []).map(d => ({
+    type: 'bar',
+    barWidth: 13,
+    data: (props.dimensions || []).map((d, index) => ({
       value: d.score,
       itemStyle: {
-        color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
-          colorStops: [{ offset: 0, color: '#6366f1' }, { offset: 1, color: '#a855f7' }] },
-        borderRadius: [0, 6, 6, 0],
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 1,
+          y2: 0,
+          colorStops: [
+            { offset: 0, color: index % 2 ? '#2563eb' : '#14b8a6' },
+            { offset: 1, color: index % 2 ? '#60a5fa' : '#5eead4' },
+          ],
+        },
+        borderRadius: [0, 8, 8, 0],
       },
     })),
-    label: { show: true, position: 'right', color: '#64748b', fontSize: 11, fontWeight: 600, formatter: '{c}分' },
+    label: { show: true, position: 'right', color: '#64748b', fontSize: 11, fontWeight: 700, formatter: '{c}' },
   }],
 }))
 </script>
 
 <template>
-  <div class="card p-5 h-full relative overflow-hidden">
-    <!-- ANALYZING -->
+  <section class="card p-4 sm:p-6 min-h-[520px] reveal">
     <template v-if="isAnalyzing">
-      <div class="flex items-center gap-4 mb-5">
-        <span class="text-5xl font-extrabold text-slate-900 tracking-tight">{{ progress }}%</span>
+      <div class="analysis-loading">
         <div>
-          <p class="text-sm font-semibold text-slate-700">正在智能分析中...</p>
-          <p class="text-xs text-slate-400 mt-0.5">AI 正在解析简历内容、识别关键信息与岗位匹配度</p>
-        </div>
-        <div class="relative w-12 h-12 flex-shrink-0 ml-auto">
-          <div class="absolute inset-0 rounded-full border-2 border-blue-100 animate-rotate-glow"></div>
-          <div class="absolute inset-1.5 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-400/30">
-            <span class="text-[10px] font-extrabold text-white">AI</span>
+          <p class="text-sm font-bold text-slate-600 mb-2">正在进行智能分析</p>
+          <div class="flex items-end gap-2">
+            <span class="text-6xl font-black tracking-tight text-slate-950">{{ progress }}</span>
+            <span class="text-xl font-bold text-slate-400 mb-2">%</span>
           </div>
         </div>
-      </div>
-      <div class="relative h-2 bg-slate-100 rounded-full overflow-hidden mb-5">
-        <div class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300" :style="{ width: progress + '%' }">
-          <div class="absolute inset-y-0 w-20 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-30deg] animate-pulse"></div>
+        <div class="ai-orbit">
+          <span>AI</span>
         </div>
       </div>
-      <div class="flex items-center justify-between">
-        <div v-for="(step, i) in (steps || [])" :key="i" class="flex items-center gap-1.5">
-          <div :class="['w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300', i <= currentStep ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30' : 'bg-slate-100 text-slate-400']">
-            <svg v-if="i < currentStep" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+      <div class="progress-track mt-6">
+        <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+      </div>
+
+      <div class="steps mt-6">
+        <div v-for="(step, index) in steps" :key="step" class="step">
+          <span :class="['step-dot', index <= currentStep && 'active']">
+            <svg v-if="index < currentStep" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
             </svg>
-            <span v-else>{{ i + 1 }}</span>
-          </div>
-          <span :class="['text-[11px] font-medium transition-colors', i <= currentStep ? 'text-slate-700' : 'text-slate-400']">{{ step }}</span>
-          <div v-if="i < steps.length - 1" :class="['w-3 lg:w-6 h-0.5 rounded transition-colors', i < currentStep ? 'bg-blue-400' : 'bg-slate-200']"></div>
+            <b v-else>{{ index + 1 }}</b>
+          </span>
+          <span :class="index <= currentStep ? 'text-slate-800' : 'text-slate-400'">{{ step }}</span>
         </div>
       </div>
     </template>
 
-    <!-- RESULT -->
     <template v-else-if="hasResult">
-      <div class="flex items-center gap-4 mb-4">
-        <div class="relative w-20 h-20 flex-shrink-0">
-          <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="6"/>
-            <circle cx="50" cy="50" r="38" fill="none" :stroke="scoreColor" stroke-width="6" stroke-linecap="round"
-              :stroke-dasharray="2 * Math.PI * 38"
-              :stroke-dashoffset="2 * Math.PI * 38 * (1 - overallScore / 100)"
-              class="transition-[stroke-dashoffset] duration-1000 ease-out"
-            />
+      <div class="flex flex-col xl:flex-row xl:items-center gap-5 mb-6">
+        <div class="score-ring" :style="{ '--score-color': scoreTone.color, '--score': overallScore }">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="48" />
+            <circle cx="60" cy="60" r="48" />
           </svg>
-          <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-xl font-extrabold text-slate-800" :style="{ color: scoreColor }">{{ overallScore }}</span>
-            <span class="text-[9px] text-slate-400">/ 100</span>
+          <div>
+            <strong>{{ overallScore }}</strong>
+            <span>{{ scoreTone.label }}</span>
           </div>
         </div>
+
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-bold mb-0.5" :style="{ color: scoreColor }">{{ recommendation || '待评估' }}</div>
-          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">{{ hrSuggestions?.summary || '' }}</p>
-        </div>
-        <div v-if="recommendation" :class="['px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0', overallScore >= 80 ? 'bg-emerald-50 text-emerald-600' : overallScore >= 60 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600']">
-          {{ recommendation }}
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <span class="result-pill" :style="{ color: scoreTone.color, backgroundColor: scoreTone.color + '14' }">{{ recommendation || '待评估' }}</span>
+            <button class="mini-action" @click="$emit('copy-report')">复制报告</button>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-black tracking-tight text-slate-950 mb-2">综合评估结果</h2>
+          <p class="text-sm text-slate-600 leading-6">{{ hrSuggestions?.summary }}</p>
         </div>
       </div>
 
-      <div class="border-t border-slate-100 pt-4 space-y-4">
-        <div>
-          <h4 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">维度评分</h4>
-          <v-chart v-if="dimensions?.length" :option="barOption" :autoresize="true" class="w-full" style="height:150px" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <h4 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">风险提示</h4>
-            <div v-if="riskPoints?.length" class="space-y-1.5">
-              <div v-for="(r, i) in riskPoints.slice(0, 3)" :key="i" :class="['text-xs p-2 rounded-lg', r.level === 'high' ? 'bg-red-50 text-red-700 border border-red-100' : r.level === 'medium' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-blue-50 text-blue-700 border border-blue-100']">{{ r.content }}</div>
-            </div>
-            <p v-else class="text-xs text-slate-400">未发现风险</p>
+      <div class="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-5">
+        <div class="panel-soft">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="subhead">维度评分</h3>
+            <span class="text-xs text-slate-500">满分 100</span>
           </div>
-          <div>
-            <h4 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">面试问题建议</h4>
-            <div v-if="interviewQuestions?.length" class="space-y-1.5">
-              <div v-for="(q, i) in interviewQuestions.slice(0, 3)" :key="i" class="text-xs p-2 rounded-lg bg-slate-50 border border-slate-100 text-slate-600">
-                <span class="font-semibold text-indigo-500">{{ q.category }}：</span>{{ q.question }}
-              </div>
+          <v-chart v-if="dimensions?.length" :option="barOption" :autoresize="true" class="w-full" style="height:210px" />
+        </div>
+
+        <div class="space-y-3">
+          <div class="panel-soft">
+            <h3 class="subhead mb-2">优势亮点</h3>
+            <ul class="compact-list">
+              <li v-for="item in (hrSuggestions?.strengths || []).slice(0, 3)" :key="item">{{ item }}</li>
+            </ul>
+          </div>
+          <div class="panel-soft">
+            <h3 class="subhead mb-2">短板与风险</h3>
+            <ul v-if="riskPoints?.length" class="compact-list warning">
+              <li v-for="risk in riskPoints.slice(0, 3)" :key="risk.content">{{ risk.content }}</li>
+            </ul>
+            <p v-else class="text-sm text-slate-500">暂未发现明显风险。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+        <div class="panel-soft">
+          <h3 class="subhead mb-3">面试问题建议</h3>
+          <div class="space-y-2">
+            <div v-for="item in interviewQuestions?.slice(0, 4)" :key="item.question" class="question-item">
+              <span>{{ item.category }}</span>
+              <p>{{ item.question }}</p>
             </div>
-            <p v-else class="text-xs text-slate-400">暂无建议</p>
+          </div>
+        </div>
+        <div class="panel-soft">
+          <h3 class="subhead mb-3">下一步动作</h3>
+          <div class="space-y-2">
+            <div v-for="(step, index) in (hrSuggestions?.nextSteps || [])" :key="step" class="next-step">
+              <span>{{ index + 1 }}</span>
+              <p>{{ step }}</p>
+            </div>
           </div>
         </div>
       </div>
     </template>
 
-    <!-- EMPTY -->
-    <div v-else class="flex flex-col items-center justify-center py-10 text-center h-full">
-      <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-        <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    <div v-else class="empty-state">
+      <div class="empty-visual">
+        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M9.75 17L9 21l3-1.5L15 21l-.75-4M7 10a5 5 0 1110 0c0 2.4-1.7 4.4-4 4.9V17h-2v-2.1A5 5 0 017 10z" />
         </svg>
       </div>
-      <p class="text-sm font-semibold text-slate-500 mb-1">准备就绪</p>
-      <p class="text-xs text-slate-400">填写岗位信息与简历后，点击"开始 AI 分析"开始</p>
+      <h2>等待分析</h2>
+      <p>填写岗位画像并粘贴简历后，系统会生成匹配分、风险点、面试问题和下一步建议。</p>
     </div>
-  </div>
+  </section>
 </template>

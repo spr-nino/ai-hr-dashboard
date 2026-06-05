@@ -2,80 +2,95 @@
 import { ref, computed } from 'vue'
 
 const props = defineProps({
-  resumeText: String, resumeFileName: String, demoResume: String, isAnalyzing: Boolean,
+  resumeText: String,
+  resumeFileName: String,
+  demoResume: String,
+  isAnalyzing: Boolean,
 })
-const emit = defineEmits(['update:resume', 'analyze'])
+const emit = defineEmits(['update:resume', 'analyze', 'clear'])
 
-const hasResume = computed(() => (props.resumeText?.length || 0) > 0)
+const hasResume = computed(() => (props.resumeText?.trim().length || 0) > 0)
 const showTextarea = ref(false)
+const quality = computed(() => {
+  const len = props.resumeText?.length || 0
+  if (len > 450) return { label: '信息充足', tone: 'success', width: 100 }
+  if (len > 180) return { label: '可分析', tone: 'warning', width: 68 }
+  return { label: '信息偏少', tone: 'danger', width: Math.max(18, Math.round(len / 180 * 50)) }
+})
 
 function useDemoResume() {
   emit('update:resume', props.demoResume, '示例简历.txt')
   showTextarea.value = true
 }
-function onTextInput(e) {
-  emit('update:resume', e.target.value, 'manual-input.txt')
+
+function onTextInput(event) {
+  emit('update:resume', event.target.value, 'manual-input.txt')
 }
 </script>
 
 <template>
-  <div class="card p-4 sm:p-6 flex flex-col h-full">
-    <div class="flex items-center gap-2.5 mb-4">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20">
-        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  <section class="card p-4 sm:p-6 flex flex-col min-h-[520px] reveal">
+    <div class="section-title mb-5">
+      <span class="icon-badge green">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M7 3h6l4 4v14H7V3z" />
         </svg>
-      </div>
+      </span>
       <div>
-        <h2 class="text-sm sm:text-base font-bold text-slate-800">简历上传</h2>
-        <p class="text-[11px] sm:text-xs text-slate-400">粘贴候选人简历文本</p>
+        <h2>简历输入</h2>
+        <p>粘贴候选人简历文本进行即时评估。</p>
       </div>
     </div>
 
-    <!-- Upload zone (empty) -->
-    <div
+    <button
       v-if="!hasResume && !showTextarea"
-      class="flex-1 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 bg-gradient-to-b from-slate-50 to-white hover:border-blue-300 hover:from-blue-50/50 hover:to-white transition-all cursor-pointer group min-h-[280px]"
+      class="upload-zone group"
+      type="button"
       @click="showTextarea = true"
     >
-      <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-        <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      <span class="upload-icon">
+        <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M7 16a4 4 0 01-.9-7.9A5 5 0 0115.9 6H16a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
         </svg>
-      </div>
-      <p class="text-base font-semibold text-slate-600 mb-1.5">点击此处粘贴简历</p>
-      <p class="text-sm text-slate-400">支持 PDF / Word / TXT / 直接粘贴文本</p>
-    </div>
+      </span>
+      <span class="text-base font-bold text-slate-800">点击粘贴简历</span>
+      <span class="text-sm text-slate-500">支持 PDF / Word 转文字后粘贴，也支持直接输入</span>
+    </button>
 
-    <!-- Textarea -->
     <div v-else class="flex-1 flex flex-col min-h-0">
       <textarea
         :value="resumeText"
         @input="onTextInput"
-        placeholder="在此粘贴候选人简历文本...&#10;&#10;包含以下内容匹配效果更佳：&#10;• 个人信息（姓名、年龄、学历）&#10;• 工作经历（公司、职位、时间、项目成果）&#10;• 技能清单（技术栈、工具、语言等）&#10;• 其他亮点（证书、奖项、开源贡献等）"
-        class="flex-1 min-h-[300px] p-4 text-sm resize-y border-2 border-dashed border-blue-200 rounded-2xl bg-gradient-to-b from-blue-50/30 to-white focus:outline-none focus:border-blue-400 transition-all font-mono leading-relaxed text-slate-700 placeholder:text-slate-350"
+        placeholder="在此粘贴候选人简历文本。建议包含个人信息、教育背景、工作经历、项目成果、技能清单和证书奖项。"
+        class="resume-textarea"
       ></textarea>
-      <div v-if="resumeFileName" class="flex items-center gap-2 mt-2 text-xs text-slate-500">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        {{ resumeFileName }} &middot; {{ resumeText?.length || 0 }} 字
+      <div class="mt-3 rounded-2xl bg-slate-50 border border-slate-200 p-3">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span class="font-semibold text-slate-700">{{ resumeFileName || 'manual-input.txt' }}</span>
+          <span :class="['quality', quality.tone]">{{ quality.label }}</span>
+        </div>
+        <div class="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+          <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-500" :style="{ width: quality.width + '%' }"></div>
+        </div>
+        <div class="mt-2 flex justify-between text-[11px] text-slate-500">
+          <span>{{ resumeText?.length || 0 }} 字</span>
+          <button class="hover:text-red-500 transition-colors" type="button" @click="$emit('clear')">清空</button>
+        </div>
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="flex flex-col gap-3 mt-4">
-      <button @click="$emit('analyze')" :disabled="isAnalyzing" class="w-full py-4 text-base font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl hover:shadow-xl hover:shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 tracking-wide">
-        <svg v-if="!isAnalyzing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <button class="btn-secondary" type="button" @click="useDemoResume">示例简历</button>
+      <button class="btn-primary" type="button" :disabled="isAnalyzing" @click="$emit('analyze')">
+        <svg v-if="!isAnalyzing" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-        <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
         </svg>
-        {{ isAnalyzing ? 'AI 分析中...' : '开始 AI 分析' }}
-      </button>
-      <button v-if="!hasResume" @click="useDemoResume" class="w-full py-2.5 text-sm font-semibold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
-        使用示例简历
+        {{ isAnalyzing ? '分析中' : '开始分析' }}
       </button>
     </div>
-  </div>
+  </section>
 </template>
